@@ -1,4 +1,4 @@
-name: Build Android App
+name: Build Android App from Zip
 
 on:
   push:
@@ -11,6 +11,11 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
+
+    - name: Unzip Project Files
+      run: |
+        unzip -o my-shohoj-hisab.zip.zip -d extracted_project || unzip -o *.zip -d extracted_project
+        cp -r extracted_project/*/* . 2>/dev/null || cp -r extracted_project/* . 2>/dev/null || true
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
