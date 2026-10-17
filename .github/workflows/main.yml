@@ -1,4 +1,4 @@
-name: Build Android App from Zip
+name: Build Android App
 
 on:
   push:
@@ -12,15 +12,20 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Find and Unzip Any Zip File
+    - name: Setup and Unzip Project
       run: |
         ZIP_FILE=$(ls *.zip 2>/dev/null | head -n 1)
         if [ -n "$ZIP_FILE" ]; then
-          echo "Found zip file: $ZIP_FILE"
-          unzip -o "$ZIP_FILE" -d extracted_project
-          cp -r extracted_project/*/* . 2>/dev/null || cp -r extracted_project/* . 2>/dev/null || true
-        else
-          echo "No zip file found, proceeding with repository files."
+          echo "Unzipping $ZIP_FILE..."
+          unzip -o "$ZIP_FILE" -d extracted_temp
+          
+          # Find gradlew file path and move all files to root
+          GRADLEW_PATH=$(find extracted_temp -name "gradlew" | head -n 1)
+          if [ -n "$GRADLEW_PATH" ]; then
+            PROJECT_DIR=$(dirname "$GRADLEW_PATH")
+            cp -r "$PROJECT_DIR"/* .
+          fi
+          rm -rf extracted_temp
         fi
 
     - name: Set up JDK 17
@@ -29,11 +34,8 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Grant execute permission for gradlew
-      run: |
-        if [ -f "gradlew" ]; then
-          chmod +x gradlew
-        fi
+    - name: Make gradlew executable
+      run: chmod +x gradlew
 
     - name: Build Debug APK
       run: ./gradlew assembleDebug
@@ -43,4 +45,3 @@ jobs:
       with:
         name: Shohoj-Hisab-APK
         path: app/build/outputs/apk/debug/app-debug.apk
-
